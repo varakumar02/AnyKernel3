@@ -70,5 +70,14 @@ reset_ak;
 # vendor_boot install
 dump_boot;
 
+# A modules-less (built-in) kernel ships no vendor_dlkm.img in the zip; its
+# ramdisk modules.* still reference drivers that are now built into the image,
+# so purge them (from Madara273/AnyKernel3@9814fccb). A modular build ships
+# vendor_dlkm.img with valid module metadata -- leave the ramdisk untouched.
+if [ ! -f "$AKHOME/vendor_dlkm.img" ]; then
+  ui_print "->No vendor_dlkm.img: purging stale ramdisk module dependency...";
+  find $RAMDISK -name "modules.*" -delete;
+fi
+
 write_boot;
 ## end vendor_boot install
