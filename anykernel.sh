@@ -74,9 +74,15 @@ dump_boot;
 # ramdisk modules.* still reference drivers that are now built into the image,
 # so purge them (from Madara273/AnyKernel3@9814fccb). A modular build ships
 # vendor_dlkm.img with valid module metadata -- leave the ramdisk untouched.
-if [ ! -f "$AKHOME/vendor_dlkm.img" ]; then
-  ui_print "->No vendor_dlkm.img: purging stale ramdisk module dependency...";
+# Purge only when both hold: no vendor_dlkm.img in the zip and Android 16 or
+# newer (SDK 36+). Otherwise the ramdisk modules.* stay as they are.
+sdk=$(file_getprop /system/build.prop ro.build.version.sdk);
+[ "$sdk" ] || sdk=$(getprop ro.build.version.sdk 2>/dev/null);
+if [ ! -f "$AKHOME/vendor_dlkm.img" ] && [ "$sdk" -ge 36 ] 2>/dev/null; then
+  ui_print "->No vendor_dlkm.img on Android 16+ (SDK $sdk): purging stale ramdisk module dependency...";
   find $RAMDISK -name "modules.*" -delete;
+else
+  ui_print "->Keeping ramdisk module dependency (vendor_dlkm.img in zip or Android below 16, SDK ${sdk:-unknown})";
 fi
 
 write_boot;
