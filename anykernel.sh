@@ -75,14 +75,26 @@ dump_boot;
 # so purge them (from Madara273/AnyKernel3@9814fccb). A modular build ships
 # vendor_dlkm.img with valid module metadata -- leave the ramdisk untouched.
 # Purge only when both hold: no vendor_dlkm.img in the zip and Android 16 or
-# newer (SDK 36+). Otherwise the ramdisk modules.* stay as they are.
-sdk=$(file_getprop /system/build.prop ro.build.version.sdk);
-[ "$sdk" ] || sdk=$(getprop ro.build.version.sdk 2>/dev/null);
-if [ ! -f "$AKHOME/vendor_dlkm.img" ] && [ "$sdk" -ge 36 ] 2>/dev/null; then
-  ui_print "->No vendor_dlkm.img on Android 16+ (SDK $sdk): purging stale ramdisk module dependency...";
+# newer. Otherwise the ramdisk modules.* stay as they are.
+# The Android version is read the same way as AK3's own version check
+# (ro.build.version.release); the SDK level is the fallback when that is not
+# a plain number (e.g. a codename on preview builds).
+android=$(file_getprop /system/build.prop ro.build.version.release);
+android=${android%%.*};
+case "$android" in
+  ''|*[!0-9]*)
+    sdk=$(file_getprop /system/build.prop ro.build.version.sdk);
+    [ "$sdk" ] || sdk=$(getprop ro.build.version.sdk 2>/dev/null);
+    case "$sdk" in
+      ''|*[!0-9]*) android="";;
+      *) [ "$sdk" -ge 36 ] && android=16 || android=15;;
+    esac;;
+esac;
+if [ ! -f "$AKHOME/vendor_dlkm.img" ] && [ "$android" ] && [ "$android" -ge 16 ]; then
+  ui_print "->No vendor_dlkm.img on Android $android: purging stale ramdisk module dependency...";
   find $RAMDISK -name "modules.*" -delete;
 else
-  ui_print "->Keeping ramdisk module dependency (vendor_dlkm.img in zip or Android below 16, SDK ${sdk:-unknown})";
+  ui_print "->Keeping ramdisk module dependency (vendor_dlkm.img in zip or Android ${android:-unknown})";
 fi
 
 write_boot;
