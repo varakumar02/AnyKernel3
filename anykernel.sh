@@ -76,11 +76,10 @@ dump_boot;
 # vendor_dlkm.img with valid module metadata -- leave the ramdisk untouched.
 # Purge only when both hold: no vendor_dlkm.img in the zip and Android 16 or
 # newer. Otherwise the ramdisk modules.* stay as they are.
-# The Android version is read the same way as AK3's own version check
-# (ro.build.version.release); the SDK level is the fallback when that is not
-# a plain number (e.g. a codename on preview builds).
-android=$(file_getprop /system/build.prop ro.build.version.release);
-android=${android%%.*};
+# The Android version is the one AK3's own version check detected
+# (AK_ANDROID_VER, exported by update-binary); the SDK level is the fallback
+# when that is missing or not a plain number (e.g. a preview codename).
+android=${AK_ANDROID_VER%%.*};
 case "$android" in
   ''|*[!0-9]*)
     sdk=$(file_getprop /system/build.prop ro.build.version.sdk);

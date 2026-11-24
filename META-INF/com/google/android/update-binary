@@ -325,6 +325,7 @@ do_versioncheck() {
   ui_print "Checking Android version...";
   supported_ver=$(file_getprop anykernel.sh supported.versions | tr -d '[:space:]');
   android_ver=$(file_getprop /system/build.prop ro.build.version.release);
+  export AK_ANDROID_VER="$android_ver";  # for anykernel.sh
   parsed_ver=$(int2ver $android_ver);
   if echo $supported_ver | grep -q '-'; then
     lo_ver=$(int2ver "$(echo $supported_ver | cut -d- -f1)");
